@@ -1,4 +1,4 @@
-import { milestones } from "@/lib/project-status";
+import type { Milestone } from "@/lib/types";
 
 function formatDate(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
@@ -8,7 +8,7 @@ function formatDate(iso: string) {
   });
 }
 
-export function MilestoneList() {
+export function MilestoneList({ milestones }: { milestones: Milestone[] }) {
   return (
     <ol className="mt-6 space-y-3">
       {milestones.map((milestone) => (
@@ -19,7 +19,7 @@ export function MilestoneList() {
           <div>
             <p className="text-sm font-semibold text-neutral-900 dark:text-white">
               <span className="text-emerald-700 dark:text-emerald-400">
-                {milestone.id}
+                {milestone.code}
               </span>{" "}
               — {milestone.name}
             </p>
