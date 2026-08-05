@@ -1,0 +1,12 @@
+# SO / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/*
+!.vscode/extensions.json
+
+# rede de segurança (o site/ já tem seu próprio .gitignore mais completo)
+node_modules/
+.env
+.env.local
+.env.*.local
