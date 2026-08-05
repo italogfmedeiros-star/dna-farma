@@ -1,96 +1,144 @@
-import Link from "next/link";
-import { DraftNotice } from "@/components/DraftNotice";
+import { PageHeader } from "@/components/PageHeader";
+import { StatCard } from "@/components/StatCard";
+import { PhaseTimeline } from "@/components/PhaseTimeline";
+import { MilestoneList } from "@/components/MilestoneList";
+import {
+  nextDeliveries,
+  projectStatus,
+  statusLabel,
+} from "@/lib/project-status";
 
-const pillars = [
-  {
-    title: "Individualização com ciência",
-    text: "Cada pessoa tem uma biologia própria. Trabalhamos para que o cuidado farmacêutico acompanhe essa singularidade, sempre a partir de prescrição.",
-  },
-  {
-    title: "Responsabilidade técnica",
-    text: "Toda a operação é conduzida sob supervisão de farmacêutico responsável técnico, com processos documentados de boas práticas.",
-  },
-  {
-    title: "Relacionamento com prescritores",
-    text: "Construímos uma ponte técnica entre prescritores e farmácia, com canais dedicados e materiais de apoio.",
-  },
-  {
-    title: "Transparência de bastidores",
-    text: "Mostramos o processo — estrutura, equipe, qualidade — sem nunca expor fórmulas, nomes comerciais ou preços de manipulados.",
-  },
-];
+function formatDate(iso: string) {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function formatAsOf(iso: string) {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
 
 export default function HomePage() {
+  const { tasksByStatus } = projectStatus;
+
   return (
     <div className="pb-24">
-      <section className="border-b border-black/5 bg-gradient-to-b from-emerald-50 to-white px-4 py-20 sm:px-6 dark:border-white/10 dark:from-emerald-950/30 dark:to-neutral-950">
-        <div className="mx-auto max-w-4xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
-            Farmácia de Manipulação Magistral
-          </p>
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl dark:text-white">
-            DNA Farma
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-neutral-600 dark:text-neutral-300">
-            Cuidado farmacêutico individualizado, ciência e acompanhamento
-            profissional — construído para durar, desde a fundação.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/farmaceutico"
-              className="rounded-md bg-emerald-700 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
-            >
-              Conheça o farmacêutico responsável
-            </Link>
-            <Link
-              href="/prescritores"
-              className="rounded-md border border-emerald-700 px-6 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
-            >
-              Sou prescritor
-            </Link>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow={`Posição em ${formatAsOf(projectStatus.asOf)}`}
+        title="Acompanhamento da Implantação"
+        description={`Painel interno de status até a inauguração (Go-Live em ${formatDate(
+          projectStatus.goLiveDate,
+        )}). Dados espelhados de 00-projeto-mestre.md — não é a fonte de verdade, apenas a leitura mais recente dela.`}
+      />
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <DraftNotice note="Texto institucional de abertura ainda depende de EST-02 (Missão, Visão, Valores) e DEC-005 (modelo de comunicação) para ser finalizado." />
-
-        <div className="mt-12 grid gap-8 sm:grid-cols-2">
-          {pillars.map((pillar) => (
-            <div
-              key={pillar.title}
-              className="rounded-xl border border-black/5 bg-neutral-50 p-6 dark:border-white/10 dark:bg-neutral-900"
-            >
-              <h2 className="text-lg font-semibold text-emerald-900 dark:text-emerald-300">
-                {pillar.title}
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                {pillar.text}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center dark:border-emerald-900/40 dark:bg-emerald-950/30">
-          <h2 className="text-xl font-semibold text-emerald-900 dark:text-emerald-300">
-            A DNA Farma está em construção
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+        {/* Visão geral */}
+        <section>
+          <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            Visão geral
           </h2>
-          <p className="mx-auto mt-2 max-w-2xl text-sm text-neutral-700 dark:text-neutral-300">
-            Estamos preparando cada etapa com cuidado — da estrutura física à
-            equipe farmacêutica. Acompanhe o processo e fale com a gente.
-          </p>
-          <div className="mt-6">
-            <Link
-              href="/contato"
-              className="rounded-md bg-emerald-700 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
-            >
-              Fale conosco
-            </Link>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              label="Percentual concluído"
+              value={`${projectStatus.overallPercent}%`}
+              hint="baseline"
+            />
+            <StatCard label="Fase atual" value={projectStatus.currentPhase} />
+            <StatCard
+              label="Dias até o Go-Live"
+              value={`${projectStatus.daysToGoLive}`}
+              hint={`${projectStatus.weeksRemaining} semanas restantes`}
+            />
+            <StatCard
+              label="Saúde do projeto"
+              value={projectStatus.health}
+              tone="warning"
+              hint={projectStatus.healthNote}
+            />
+            <StatCard
+              label="Tarefas mapeadas"
+              value={`${projectStatus.totalTasks}`}
+              hint={`${tasksByStatus.done} concluídas · ${tasksByStatus.in_progress} em andamento`}
+            />
+            <StatCard
+              label="Tarefas não iniciadas"
+              value={`${tasksByStatus.not_started}`}
+            />
+            <StatCard
+              label="Tarefas bloqueadas"
+              value={`${tasksByStatus.blocked}`}
+              tone={tasksByStatus.blocked > 0 ? "danger" : "good"}
+            />
+            <StatCard
+              label="Riscos ativos"
+              value={`${projectStatus.activeRisks}`}
+              tone="danger"
+              hint={`${projectStatus.criticalRisks} críticos`}
+            />
+            <StatCard
+              label="Itens aguardando resposta"
+              value={`${projectStatus.itemsAwaitingResponse}`}
+            />
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* Próximas entregas */}
+        <section className="mt-12">
+          <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            Próximas entregas
+          </h2>
+          <ol className="mt-4 space-y-2">
+            {nextDeliveries.map((item) => (
+              <li
+                key={item.title}
+                className="flex flex-col gap-1 rounded-xl border border-black/5 bg-neutral-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-neutral-900"
+              >
+                <div>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                    {item.title}
+                  </p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Responsável: {item.owner}
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  {formatDate(item.due)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Marcos */}
+        <section className="mt-12">
+          <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            Marcos do cronograma
+          </h2>
+          <MilestoneList />
+        </section>
+
+        {/* Linha do tempo das fases */}
+        <section className="mt-12">
+          <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+            As 14 fases
+          </h2>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            As fases rodam em paralelo, não em sequência — só há viabilidade
+            para 13 semanas com paralelismo agressivo.
+          </p>
+          <PhaseTimeline />
+        </section>
+
+        <p className="mt-12 text-xs text-neutral-400 dark:text-neutral-600">
+          Legenda de status: {Object.values(statusLabel).join(" · ")}.
+        </p>
+      </div>
     </div>
   );
 }
