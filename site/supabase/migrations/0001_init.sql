@@ -2,8 +2,30 @@
 -- Migração inicial: perfis/roles, fases, tarefas, auditoria, RLS, seed.
 --
 -- Como rodar: Supabase Dashboard → SQL Editor → cole este arquivo inteiro →
--- Run. É idempotente o suficiente para rodar uma vez num projeto novo; não
--- rode duas vezes sem revisar (não há "IF NOT EXISTS" em todo lugar).
+-- Run. O bloco 0 abaixo dropa tudo que este arquivo cria (se existir) antes
+-- de recriar — então é seguro rodar de novo do zero, inclusive depois de
+-- uma tentativa anterior que falhou no meio (o Postgres comita cada
+-- statement individualmente; um erro na metade deixa objetos anteriores
+-- criados). ⚠️ Isso apaga qualquer dado real já digitado nas tabelas do
+-- painel — não rode em produção com dados que você quer manter.
+
+-- ============================================================
+-- 0. LIMPEZA (idempotência — seguro rodar o arquivo várias vezes)
+-- ============================================================
+
+drop trigger if exists on_auth_user_created on auth.users;
+drop function if exists public.handle_new_user();
+drop function if exists public.can_write();
+drop function if exists public.is_admin();
+drop function if exists public.current_role();
+drop table if exists public.audit_log cascade;
+drop table if exists public.project_meta cascade;
+drop table if exists public.tasks cascade;
+drop table if exists public.milestones cascade;
+drop table if exists public.phases cascade;
+drop table if exists public.profiles cascade;
+drop type if exists public.phase_status;
+drop type if exists public.user_role;
 
 -- ============================================================
 -- 1. TIPOS
@@ -30,7 +52,7 @@ create table public.phases (
   id serial primary key,
   code text not null unique,          -- 'F1'..'F14'
   name text not null,
-  window text not null,               -- ex.: 'S1–S2'
+  time_window text not null,          -- ex.: 'S1–S2'. ("window" é palavra reservada no Postgres)
   weight int not null,                -- peso % no projeto (soma = 100)
   status public.phase_status not null default 'not_started',
   order_index int not null,
@@ -219,7 +241,7 @@ create policy "audit_log_insert_editors" on public.audit_log
 -- 6. SEED — 14 fases (Seção 6.1 do documento mestre) + 5 marcos (Seção 6.2)
 -- ============================================================
 
-insert into public.phases (code, name, window, weight, status, order_index) values
+insert into public.phases (code, name, time_window, weight, status, order_index) values
   ('F1',  'Planejamento Estratégico',            'S1–S2',      5,  'in_progress', 1),
   ('F2',  'Jurídico e Regulatório',               'S1–S8',      11, 'in_progress', 2),
   ('F3',  'Infraestrutura Física',                'S1–S8',      13, 'in_progress', 3),

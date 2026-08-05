@@ -38,7 +38,7 @@ export function PhaseTimeline({ phases }: { phases: PhaseWithProgress[] }) {
                     {phase.code} — {phase.name}
                   </p>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    Janela {phase.window} · peso {phase.weight}% do projeto ·{" "}
+                    Janela {phase.time_window} · peso {phase.weight}% do projeto ·{" "}
                     {phase.completedCount}/{phase.totalCount} tarefas
                   </p>
                 </div>

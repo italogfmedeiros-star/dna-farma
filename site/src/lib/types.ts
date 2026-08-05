@@ -26,7 +26,7 @@ export type Phase = {
   id: number;
   code: string;
   name: string;
-  window: string;
+  time_window: string;
   weight: number;
   status: PhaseStatus;
   order_index: number;

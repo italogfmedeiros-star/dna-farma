@@ -31,7 +31,7 @@ export default async function PhaseDetailPage({
   return (
     <div className="pb-24">
       <PageHeader
-        eyebrow={`${phase.window} · peso ${phase.weight}% do projeto`}
+        eyebrow={`${phase.time_window} · peso ${phase.weight}% do projeto`}
         title={`${phase.code} — ${phase.name}`}
       />
 
