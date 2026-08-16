@@ -1,13 +1,17 @@
+import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { PhaseTimeline } from "@/components/PhaseTimeline";
-import { requireProfile } from "@/lib/auth";
+import { getCurrentProfile } from "@/lib/auth";
 import { computeOverallPercent, getPhasesWithProgress } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function FasesPage() {
-  await requireProfile();
-  const phases = await getPhasesWithProgress();
+  const [profile, phases] = await Promise.all([
+    getCurrentProfile(),
+    getPhasesWithProgress(),
+  ]);
+  if (!profile) redirect("/login");
   const overallPercent = computeOverallPercent(phases);
 
   return (

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -6,7 +6,7 @@ import { PhaseStatusSelect } from "@/components/PhaseStatusSelect";
 import { TaskRow } from "@/components/TaskRow";
 import { AddTaskForm } from "@/components/AddTaskForm";
 import { AuditTimeline } from "@/components/AuditTimeline";
-import { canWrite, requireProfile } from "@/lib/auth";
+import { canWrite, getCurrentProfile } from "@/lib/auth";
 import { getPhaseAudit, getPhaseWithTasksByCode } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -17,10 +17,13 @@ export default async function PhaseDetailPage({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
-  const profile = await requireProfile();
-  const editable = canWrite(profile.role);
 
-  const phase = await getPhaseWithTasksByCode(code.toUpperCase());
+  const [profile, phase] = await Promise.all([
+    getCurrentProfile(),
+    getPhaseWithTasksByCode(code.toUpperCase()),
+  ]);
+  if (!profile) redirect("/login");
+  const editable = canWrite(profile.role);
   if (!phase) notFound();
 
   const audit = await getPhaseAudit(

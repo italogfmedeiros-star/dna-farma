@@ -1,7 +1,8 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { AuditTimeline } from "@/components/AuditTimeline";
-import { requireProfile } from "@/lib/auth";
+import { getCurrentProfile } from "@/lib/auth";
 import { getGlobalAudit } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -11,11 +12,14 @@ export default async function AuditoriaPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  await requireProfile();
   const { page: pageParam } = await searchParams;
   const page = Math.max(0, Number(pageParam ?? 0) || 0);
 
-  const { entries, hasMore } = await getGlobalAudit(page);
+  const [profile, { entries, hasMore }] = await Promise.all([
+    getCurrentProfile(),
+    getGlobalAudit(page),
+  ]);
+  if (!profile) redirect("/login");
 
   return (
     <div className="pb-24">

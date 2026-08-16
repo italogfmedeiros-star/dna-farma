@@ -1,9 +1,10 @@
+import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
 import { PhaseTimeline } from "@/components/PhaseTimeline";
 import { MilestoneList } from "@/components/MilestoneList";
 import { TaskCheckbox } from "@/components/TaskCheckbox";
-import { canWrite, requireProfile } from "@/lib/auth";
+import { canWrite, getCurrentProfile } from "@/lib/auth";
 import {
   computeOverallPercent,
   findCurrentPhase,
@@ -43,15 +44,20 @@ function daysUntil(iso: string) {
 }
 
 export default async function HomePage() {
-  const profile = await requireProfile();
-  const editable = canWrite(profile.role);
-
-  const [phases, upcoming, milestones, meta] = await Promise.all([
+  // Checagem de sessão e busca de dados disparadas juntas — antes o
+  // requireProfile() era esperado sozinho antes de sequer começar a
+  // buscar os dados, somando uma rodada de rede inteira ao carregamento.
+  // RLS no Supabase já protege os dados independente da ordem aqui; o
+  // redirect só acontece depois de tudo resolver.
+  const [profile, phases, upcoming, milestones, meta] = await Promise.all([
+    getCurrentProfile(),
     getPhasesWithProgress(),
     getUpcomingTasks(5),
     getMilestones(),
     getProjectMeta(),
   ]);
+  if (!profile) redirect("/login");
+  const editable = canWrite(profile.role);
 
   const overallPercent = computeOverallPercent(phases);
   const currentPhase = findCurrentPhase(phases);
