@@ -37,7 +37,6 @@ export default function DefinirSenhaPage() {
     }
 
     router.push("/");
-    router.refresh();
   }
 
   return (

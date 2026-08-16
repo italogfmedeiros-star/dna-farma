@@ -1,9 +1,17 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, UserRole } from "@/lib/types";
 
-/** Usuário + perfil da sessão atual, ou `null` se não autenticado. */
-export async function getCurrentProfile(): Promise<Profile | null> {
+/**
+ * Usuário + perfil da sessão atual, ou `null` se não autenticado.
+ *
+ * Envolvido em `cache()` (memoização por request do React) porque tanto o
+ * Header (no layout) quanto cada página chamam isso — sem cache, toda
+ * navegação disparava DUAS idas ao Supabase (auth.getUser() + select em
+ * profiles) em vez de uma, dobrando a latência de autenticação à toa.
+ */
+export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -18,7 +26,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
     .single();
 
   return profile ?? null;
-}
+});
 
 /**
  * Para uso em Server Components de página: garante que há um usuário

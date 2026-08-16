@@ -9,21 +9,26 @@ export type PhaseWithProgress = Phase & {
   ratio: number;
 };
 
-/** Todas as fases, cada uma com suas tarefas e progresso calculado. */
+/**
+ * Todas as fases, cada uma com suas tarefas e progresso calculado.
+ *
+ * Uma única consulta com join aninhado (phases + tasks) em vez de duas
+ * chamadas separadas — cada ida ao Supabase é uma rodada de rede real, e
+ * essa função corre em toda carga do painel.
+ */
 export async function getPhasesWithProgress(): Promise<PhaseWithProgress[]> {
   const supabase = await createClient();
 
-  const [{ data: phases, error: phasesError }, { data: tasks, error: tasksError }] =
-    await Promise.all([
-      supabase.from("phases").select("*").order("order_index"),
-      supabase.from("tasks").select("*").order("order_index"),
-    ]);
+  const { data: phases, error } = await supabase
+    .from("phases")
+    .select("*, tasks(*)")
+    .order("order_index")
+    .order("order_index", { referencedTable: "tasks" });
 
-  if (phasesError) throw phasesError;
-  if (tasksError) throw tasksError;
+  if (error) throw error;
 
-  return (phases ?? []).map((phase) => {
-    const phaseTasks = (tasks ?? []).filter((t) => t.phase_id === phase.id);
+  return (phases ?? []).map(({ tasks, ...phase }) => {
+    const phaseTasks = (tasks ?? []) as Task[];
     const completedCount = phaseTasks.filter((t) => t.completed).length;
     const totalCount = phaseTasks.length;
     return {
@@ -95,27 +100,23 @@ export async function getPhaseWithTasksByCode(
 ): Promise<PhaseWithProgress | null> {
   const supabase = await createClient();
 
-  const { data: phase, error: phaseError } = await supabase
+  const { data: phase, error } = await supabase
     .from("phases")
-    .select("*")
+    .select("*, tasks(*)")
     .eq("code", code)
+    .order("order_index", { referencedTable: "tasks" })
     .maybeSingle();
-  if (phaseError) throw phaseError;
+  if (error) throw error;
   if (!phase) return null;
 
-  const { data: tasks, error: tasksError } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("phase_id", phase.id)
-    .order("order_index");
-  if (tasksError) throw tasksError;
-
-  const completedCount = (tasks ?? []).filter((t) => t.completed).length;
-  const totalCount = (tasks ?? []).length;
+  const { tasks, ...rest } = phase;
+  const phaseTasks = (tasks ?? []) as Task[];
+  const completedCount = phaseTasks.filter((t) => t.completed).length;
+  const totalCount = phaseTasks.length;
 
   return {
-    ...phase,
-    tasks: tasks ?? [],
+    ...rest,
+    tasks: phaseTasks,
     completedCount,
     totalCount,
     ratio: totalCount > 0 ? completedCount / totalCount : 0,

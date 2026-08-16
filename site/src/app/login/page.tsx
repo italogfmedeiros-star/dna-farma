@@ -35,8 +35,10 @@ export default function LoginPage() {
       return;
     }
 
+    // Sem router.refresh() aqui de propósito: todo o app é force-dynamic
+    // (depende de cookies), então o push já busca a página nova fresca no
+    // servidor — refresh() a mais só duplicava essa busca.
     router.push(searchParams.get("next") ?? "/");
-    router.refresh();
   }
 
   return (
